@@ -1,6 +1,7 @@
 package main3;
 import java.io.*;
 import java.net.*;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -55,7 +56,7 @@ public class PlayerHandler implements Runnable {
             tickets.put(ticket, nickname);
             out.println("Your ticket: " + ticket);
             player = new Player(tickets.get(ticket),ticket, out);
-            out.println("Available commands: view, join, leave, select, newgame, exit");
+            out.println("Available commands: view, join, leave, select, newgame, exit | Usage /<Command>");
             // Handle player messages
             String input;
 
@@ -63,7 +64,7 @@ public class PlayerHandler implements Runnable {
                 String[] tokens = input.split(" ");
                 String command = tokens[0];
                 switch (command) {
-                    case "join":
+                    case "/join":
                         if (tokens.length != 2) {
                             out.println("Usage: join <gameId>");
                             break;
@@ -71,10 +72,10 @@ public class PlayerHandler implements Runnable {
                         int gameId = Integer.parseInt(tokens[1]);
                         joinGame(gameId);
                         break;
-                    case "view":
+                    case "/view":
                     	view();
                     	break;
-                    case "select":
+                    case "/select":
                         if (tokens.length != 2) {
                             out.println("Usage: select <number>");
                             break;
@@ -82,20 +83,25 @@ public class PlayerHandler implements Runnable {
                         int number = Integer.parseInt(tokens[1]);
                         selectNumber(number);
                         break;
-                    case "leave":
+                    case "/leave":
                     	if(this.game == null) {
                     		out.println("You are not currently in any game.");
                     	}else {
                     		leaveGame();
                     	}
                     	break;
-                    case "newgame":
+                    case "/newgame":
                         createNewGame();
                         break;
-                    case "exit":
+                    case "/exit":
                         return; // Exit the loop and close the connection
                     default:
-                        out.println("Unknown command. Available commands: view, join, leave, select, newgame, exit");
+                    	if(this.game == null || command.charAt(0) == '/') {
+                            out.println("Available commands: view, join, leave, select, newgame, exit | Usage /<Command>");
+                    	}else {
+                    		String chat = this.player.getNickname()+" > "+input;
+                    		game.notifyPlayers(chat);
+                    	}
                 }
             }
         } catch (IOException | InterruptedException e) {
@@ -184,6 +190,10 @@ public class PlayerHandler implements Runnable {
         // Find the game that the player is currently in
         if (game == null) {
             out.println("You are not in a game.");
+            return;
+        }
+        if (number > 100 || number < 0) {
+            out.println("Please only choose a number between (0 - 100)");
             return;
         }
 

@@ -180,9 +180,18 @@ public class Game {
         notifyPlayers("The game has ended.");
     }
 
-    private void notifyPlayers(String message) {
+    public void notifyPlayers(String message) {
         for (Player player : players) {
-            player.sendMessage(message);
+//        	if(pl == null) {
+//        		player.sendMessage(message);
+//        		continue;
+//        	}
+//        	if(!player.getTicket().equals(pl.ticket)) {
+//            player.sendMessage(message);
+//        	}else {
+//        		
+//        	}
+        	player.sendMessage(message);
         }
     }
 
