@@ -55,7 +55,7 @@ public class PlayerHandler implements Runnable {
             ticket = UUID.randomUUID().toString();
             tickets.put(ticket, nickname);
             out.println("Your ticket: " + ticket);
-            player = new Player(tickets.get(ticket),ticket, out);
+            this.player = new Player(tickets.get(ticket),ticket, out);
             out.println("Available commands: view, join, leave, select, newgame, exit | Usage /<Command>");
             // Handle player messages
             String input;
@@ -88,6 +88,13 @@ public class PlayerHandler implements Runnable {
                     		out.println("You are not currently in any game.");
                     	}else {
                     		leaveGame();
+                    	}
+                    	break;
+                    case "/start":
+                    	if(this.game == null) {
+                    		out.println("You are not currently in any game.");
+                    	}else {
+                    		this.game.voteStart(player);
                     	}
                     	break;
                     case "/newgame":
@@ -141,8 +148,7 @@ public class PlayerHandler implements Runnable {
             for (Game game : games) {
                 if (game.getGameId() == gameId) {
                     // Add player to the game
-                    Player player = new Player(tickets.get(ticket),ticket, out);
-                    game.addPlayer(player);
+                    game.addPlayer(this.player);
                     this.game = game; // Set the current game for the player
                     out.println("Joined game " + gameId);
                     return;

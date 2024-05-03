@@ -14,8 +14,11 @@ public class Game {
     private boolean active;
     private int currentRound;
     private Map<String, Integer> selections;
+    private int startVotes;
     private Semaphore gameSemaphore;
     private final int MIN_PLAYERS_TO_START = 2;
+    private final int MAX_PLAYERS = 6;
+
 
     public Game(int gameId) {
         this.gameId = gameId;
@@ -23,6 +26,7 @@ public class Game {
         this.active = false;
         this.currentRound = 0;
         this.selections = new HashMap<>();
+        this.startVotes = 0;
         this.gameSemaphore = new Semaphore(1); // Only one thread can access game data at a time
     }
 
@@ -76,19 +80,32 @@ public class Game {
 	}
 
 	public void addPlayer(Player player) throws InterruptedException {
-        gameSemaphore.acquire(); // Acquire permit to access game data
+        gameSemaphore.acquire();
         try {
-            players.add(player);
-            if (players.size() >= MIN_PLAYERS_TO_START) {
-                startGame(); // Start the game when minimum players join
-            }
+        	if(players.size() >= MAX_PLAYERS) {
+        		player.sendMessage("The Game is full.");
+        		
+        	}else {
+        		notifyPlayers(player.getNickname()+" has joined the game!");
+                players.add(player);
+                player.setPoints(5);
+                if(players.size() >= MIN_PLAYERS_TO_START) {
+                	notifyPlayers("Please type /start to add your vote to start the game!");
+                }
+        	}
+			/*
+			 * if (players.size() >= MIN_PLAYERS_TO_START) { startGame(); }
+			 */
         } finally {
-            gameSemaphore.release(); // Release permit after modifying game data
+            gameSemaphore.release();
         }
     }
 
     public void startGame() {
         if (!active) {
+        	for(Player pl : players) {
+        		pl.voted = false;
+        	}
             active = true;
             currentRound = 1;
             StringBuilder startMessage = new StringBuilder("The game has started! Round 1 begins now.\n");
@@ -133,7 +150,6 @@ public class Game {
                     			for(Player pl : players) {
                                 	if(pl.getTicket().equals(entry.getKey())) {
                                 		playerNames = playerNames +","+pl.getNickname();
-                                		pl.addPoint();
                                 		scores = scores +","+pl.getPoints();
                                 		values = values+","+value;
                                 		status = status+","+"win";
@@ -143,6 +159,7 @@ public class Game {
                     		}else {
                     			for(Player pl : players) {
                                 	if(pl.getTicket().equals(entry.getKey())) {
+                                		pl.setPoints(pl.getPoints()-1);
                                 		playerNames = playerNames +","+pl.getNickname();
                                 		scores = scores +","+pl.getPoints();
                                 		values = values+","+value;
@@ -172,7 +189,23 @@ public class Game {
         }
     }
 
+    public void voteStart(Player player) {
+    	if(!this.active) {
+        	if(!player.voted) {
+        		startVotes++;
+        		notifyPlayers("Current votes to start: ("+startVotes+"/"+players.size());
+        		player.voted = true;
+        		if(startVotes == players.size() && startVotes >= MIN_PLAYERS_TO_START) {
+        			startGame();
+        		}
+        	}else {
+        		player.sendMessage("You have already voted");
+        	}
+    	}else {
+    		player.sendMessage("Game has already started");
+    	}
 
+    }
     public void endGame() {
         active = false;
         currentRound = 0;
