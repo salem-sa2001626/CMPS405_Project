@@ -13,3 +13,14 @@
 5. Adding a way to start the game when the player number has reached the minimum. Fixed by adding a vote to start, where all the players have to vote so that the game would start.
 6. Differentiating between whether the user wants to chat or type a command. The solution was to add a switch case, where it would check if the user has typed a command using a slash "/", if not then this would mean that they want to chat, and there is also a check to see if there is a game active or not.
 7. Implementing the leaderboard. To implement the leaderboard we used a hash map, where it takes a string and an integer, when the user gets a new "GamesWon" score, meaning increasing the number of games won score for the player variable, the leaderboard would update through using the put function that is available in the hash map. Moreover, to print out the best 5 playes, the has map has a stream() function, which returns a sequential Stream over the elements in the collection, sorting it in a reverse fashion to get the larger score in the beginning, and then printing the first 5.
+
+## Contributions
+| Member | Date | Description |
+| :----- | ---------: | :---------- |
+| Salem | 2024-04-24 | Initial commit|
+| Salem | 2024-04-24 | Project Files|
+| Salem | 2024-04-26 | Added a chat|
+| Salem | 2024-05-03 | Added vote to start the game|
+| Salem | 2024-05-05 | Added elimination|
+| Salem | 2024-05-05 | Optimization|
+| Salem | 2024-05-05 | Added a leaderboard and removed unused files|
