@@ -11,6 +11,7 @@ import java.util.concurrent.Semaphore;
 public class Game {
     private int gameId;
     private List<Player> players;
+    private List<Player> eliminated;
     private boolean active;
     private int currentRound;
     private Map<String, Integer> selections;
@@ -23,6 +24,7 @@ public class Game {
     public Game(int gameId) {
         this.gameId = gameId;
         this.players = new ArrayList<>();
+        this.eliminated = new ArrayList<>();
         this.active = false;
         this.currentRound = 0;
         this.selections = new HashMap<>();
@@ -57,7 +59,11 @@ public class Game {
 	public List<Player> getPlayers() {
 		return players;
 	}
-
+	public void eliminatePlayer(Player player) {
+		this.players.remove(player);
+		this.eliminated.add(player);
+		player.sendMessage("You have been eliminated!");
+	}
 	public void setPlayers(List<Player> players) {
 		this.players = players;
 	}
@@ -144,31 +150,53 @@ public class Game {
                     			
                     		}
                     	}
-                    for (Map.Entry<String, Integer> entry : selections.entrySet()) {
-                    	int value = entry.getValue();
-                    		if((value-(avg*(2/3))) == closestValue) {
-                    			for(Player pl : players) {
-                                	if(pl.getTicket().equals(entry.getKey())) {
-                                		playerNames = playerNames +","+pl.getNickname();
-                                		scores = scores +","+pl.getPoints();
-                                		values = values+","+value;
-                                		status = status+","+"win";
-                                		
-                                	}
-                    			}
-                    		}else {
-                    			for(Player pl : players) {
-                                	if(pl.getTicket().equals(entry.getKey())) {
-                                		pl.setPoints(pl.getPoints()-1);
-                                		playerNames = playerNames +","+pl.getNickname();
-                                		scores = scores +","+pl.getPoints();
-                                		values = values+","+value;
-                                		status = status+","+"lose";
-                                	}
-                    			}
-                    			
-                    		}
-                    	}
+                    	 for (Map.Entry<String, Integer> entry : selections.entrySet()) {
+                         	int value = entry.getValue();
+                         		if((value-(avg*(2/3))) == closestValue && !((players.size() == MIN_PLAYERS_TO_START) && value == 0)) {
+                         			for(Player pl : players) {
+                                     	if(pl.getTicket().equals(entry.getKey())) {
+                                     		playerNames = playerNames +","+pl.getNickname();
+                                     		scores = scores +","+pl.getPoints();
+                                     		values = values+","+value;
+                                     		status = status+","+"win";
+                                     		
+                                     	}
+                         			}
+                         		}else {
+                         			if(value == 0 && players.size() == 2) {
+                         				if(players.get(0).getTicket() == entry.getKey()) {
+                         					players.get(0).setPoints(players.get(0).getPoints()-1);
+                                     		playerNames = ","+players.get(0).getNickname() +","+players.get(1).getNickname();
+                                     		scores = ","+players.get(0).getPoints()+","+players.get(1).getPoints();
+                                     		values = ","+value+","+selections.get(players.get(1).getTicket());
+                                     		status = ","+"lose"+","+"win";
+                         			}else {
+                    					players.get(1).setPoints(players.get(1).getPoints()-1);
+                                 		playerNames = ","+players.get(1).getNickname() +","+players.get(0).getNickname();
+                                 		scores = ","+players.get(1).getPoints()+","+players.get(0).getPoints();
+                                 		values = ","+value+","+selections.get(players.get(0).getTicket());
+                                 		status = ","+"lose"+","+"win";
+                         			}
+                         				break;
+                         			}else {
+                         				
+                         			for(Player pl : players) {
+                                     	if(pl.getTicket().equals(entry.getKey())) {
+                                     		pl.setPoints(pl.getPoints()-1);
+                                     		playerNames = playerNames +","+pl.getNickname();
+                                     		scores = scores +","+pl.getPoints();
+                                     		values = values+","+value;
+                                     		status = status+","+"lose";
+                                     		if(pl.getPoints() == 0) {
+                                     			eliminatePlayer(pl);
+                                     		}
+                                     	}
+                         			}
+
+                         		}
+                         	}
+                    }
+                   
        
                     notifyPlayers("game round "+this.currentRound+" "+playerNames.substring(1)+" "+values.substring(1)+" "+scores.substring(1)+" "+status.substring(1));
 /*                    for(Player pl : players) {
@@ -177,6 +205,14 @@ public class Game {
                     	}
                     	
                     }*/
+                    if(players.size() < MIN_PLAYERS_TO_START) {
+                    	endGame();
+                    	notifyPlayers("The winner is: "+this.players.get(0));
+                    	for(Player pl : eliminated) {
+                    		this.players.add(pl);
+                    	}
+                    	
+                    }
                     selections.clear(); // Clear selections for the next round
                     currentRound++; // Move to the next round
                 }
@@ -193,7 +229,7 @@ public class Game {
     	if(!this.active) {
         	if(!player.voted) {
         		startVotes++;
-        		notifyPlayers("Current votes to start: ("+startVotes+"/"+players.size());
+        		notifyPlayers("Current votes to start: ("+startVotes+"/"+players.size()+")");
         		player.voted = true;
         		if(startVotes == players.size() && startVotes >= MIN_PLAYERS_TO_START) {
         			startGame();
@@ -211,6 +247,7 @@ public class Game {
         currentRound = 0;
         selections.clear();
         notifyPlayers("The game has ended.");
+        
     }
 
     public void notifyPlayers(String message) {

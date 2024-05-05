@@ -147,11 +147,17 @@ public class PlayerHandler implements Runnable {
             // Find the game with the specified ID
             for (Game game : games) {
                 if (game.getGameId() == gameId) {
-                    // Add player to the game
-                    game.addPlayer(this.player);
-                    this.game = game; // Set the current game for the player
-                    out.println("Joined game " + gameId);
-                    return;
+                	if(game.isActive()) {
+                		this.player.sendMessage("Unable to join game, game is currently active.");
+                		return;
+                	}else {
+                        // Add player to the game
+                        game.addPlayer(this.player);
+                        this.game = game; // Set the current game for the player
+                        out.println("Joined game " + gameId);
+                        return;
+                	}
+
                 }
             }
             // Game not found
@@ -169,7 +175,7 @@ public class PlayerHandler implements Runnable {
         	}
         	else {
                 for(Game game : games) {
-                	out.println("Game ID: "+game.getGameId()+" | Players: "+game.getPlayers());
+                	out.println("Game ID: "+game.getGameId()+" | Players: "+game.getPlayers()+" | Is Active? "+game.isActive());
                 }
         	}
 
