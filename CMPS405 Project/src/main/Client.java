@@ -1,4 +1,4 @@
-package main3;
+package main;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -24,23 +24,21 @@ public class Client {
     }
 
     public void start() {
-        // Start a thread to read messages from the server
         new Thread(() -> {
             try {
                 String message;
                 while ((message = serverIn.readLine()) != null) {
-                    System.out.println(message); // Print messages from the server
+                    System.out.println(message);
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }).start();
 
-        // Main thread handles user input and sends commands to the server
         try {
             String userInputStr;
             while ((userInputStr = userInput.readLine()) != null) {
-                out.println(userInputStr); // Send user input to the server
+                out.println(userInputStr);
             }
         } catch (IOException e) {
             e.printStackTrace();

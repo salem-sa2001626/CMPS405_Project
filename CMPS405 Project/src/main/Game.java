@@ -1,4 +1,4 @@
-package main3;
+package main;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
@@ -19,9 +19,9 @@ public class Game {
     private Semaphore gameSemaphore;
     private final int MIN_PLAYERS_TO_START = 2;
     private final int MAX_PLAYERS = 6;
+    private Map<String, Integer> leaderboard;
 
-
-    public Game(int gameId) {
+    public Game(int gameId, Map<String, Integer> leaderboard) {
         this.gameId = gameId;
         this.players = new ArrayList<>();
         this.eliminated = new ArrayList<>();
@@ -30,6 +30,7 @@ public class Game {
         this.selections = new HashMap<>();
         this.startVotes = 0;
         this.gameSemaphore = new Semaphore(1);
+        this.leaderboard = leaderboard;
     }
 
     public boolean isActive() {
@@ -156,7 +157,7 @@ public class Game {
                     	}
                     	 for (Map.Entry<String, Integer> entry : selections.entrySet()) {
                          	int value = entry.getValue();
-                         		if((value-(avg*(2/3))) == closestValue && !((players.size() == MIN_PLAYERS_TO_START) && value == 0)) {
+                         		if((value-(avg*(2/3))) == closestValue && !((int)Math.abs(players.size() - eliminated.size()) == MIN_PLAYERS_TO_START && value == 0)) {
                          			for(Player pl : players) {
                                      	if(pl.getTicket().equals(entry.getKey())) {
                                      		playerNames = playerNames +","+pl.getNickname();
@@ -167,7 +168,7 @@ public class Game {
                                      	}
                          			}
                          		}else {
-                         			if(value == 0 && (players.size() - eliminated.size()) == 2) {
+                         			if(value == 0 && (int)Math.abs(players.size() - eliminated.size()) == 2) {
                          				if(players.get(0).getTicket() == entry.getKey()) {
                          					players.get(0).setPoints(players.get(0).getPoints()-1);
                                      		playerNames = ","+players.get(0).getNickname() +","+players.get(1).getNickname();
@@ -191,19 +192,21 @@ public class Game {
                                      		scores = scores +","+pl.getPoints();
                                      		values = values+","+value;
                                      		status = status+","+"lose";
-                                     		if(pl.getPoints() == 0) {
-                                     			eliminatePlayer(pl);
-                                     		}
+
                                      	}
                          			}
 
                          		}
                          	}
                     }
-                   
+                   for(Player pl : players) {
+                		if(pl.getPoints() == 0) {
+                 			eliminatePlayer(pl);
+                 		}
+                   }
        
                     notifyPlayers("game round "+this.currentRound+" "+playerNames.substring(1)+" "+values.substring(1)+" "+scores.substring(1)+" "+status.substring(1));
-                    if((players.size() - eliminated.size()) < MIN_PLAYERS_TO_START) {
+                    if((int)Math.abs(players.size() - eliminated.size()) < MIN_PLAYERS_TO_START) {
                     	endGame();
                     	Player winner = new Player(null,null,null);
                     	for(Player pl : players) {
@@ -212,7 +215,9 @@ public class Game {
                     			break;
                     		}
                     	}
-                    	winner.gamesWon = winner.gamesWon++;
+                    	//winner.gamesWon = winner.gamesWon++;
+                    	winner.addGamesWon();
+                    	this.leaderboard.put(winner.nickname, winner.getGamesWon());
                     	notifyPlayers("The winner is: "+winner.getNickname());
                     	
                     }
@@ -248,6 +253,7 @@ public class Game {
     public void endGame() {
         active = false;
         currentRound = 0;
+        startVotes = 0;
         selections.clear();
         notifyPlayers("The game has ended.");
         

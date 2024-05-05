@@ -1,4 +1,4 @@
-package main2;
+package main;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -6,10 +6,10 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-public class Client {
+public class ClientOld {
     private static final String SERVER_ADDRESS = "localhost";
     private static final int SERVER_PORT = 13336;
-
+    public static boolean inGame = false;
 
     public static void main(String[] args) {
         try {
@@ -34,20 +34,25 @@ public class Client {
 
             while (true) {
                 // Prompt the user for input
-                System.out.print("Enter command (join <gameId>, select <number>, newgame, exit): ");
-                String userInputStr = userInput.readLine();
+            	if(!inGame) {
+            		System.out.print("Enter command (join <gameId>, select <number>, newgame, exit): ");
+                    String userInputStr = userInput.readLine();
 
-                // Send user input to the server
-                out.println(userInputStr);
+                    // Send user input to the server
+                    out.println(userInputStr);
 
-                // Check if user wants to exit
-                if (userInputStr.equalsIgnoreCase("exit")) {
-                    break;
-                }
+                    // Check if user wants to exit
+                    if (userInputStr.equalsIgnoreCase("exit")) {
+                        break;
+                    }
 
-                // Read and display server response
-                String serverResponseStr = in.readLine();
-                System.out.println(serverResponseStr);
+                    // Read and display server response
+                    String serverResponseStr = in.readLine();
+                    System.out.println(serverResponseStr);
+            	}else {
+            		System.out.println("Hello My Friend You are in game");
+            	}
+                
             }
 
             // Close resources

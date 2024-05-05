@@ -1,4 +1,4 @@
-package main3;
+package main;
 import java.io.*;
 import java.net.*;
 import java.time.LocalTime;
@@ -16,13 +16,14 @@ public class PlayerHandler implements Runnable {
     private String ticket;
     private Game game;
     private Player player;
-
+    private Map<String, Integer> leaderboard;
     public PlayerHandler(Socket socket, Map<String, String> tickets, List<Game> games,
-                         Semaphore gamesSemaphore) {
+                         Semaphore gamesSemaphore, Map<String, Integer> leaderboard) {
         this.socket = socket;
         this.tickets = tickets;
         this.games = games;
         this.gamesSemaphore = gamesSemaphore;
+        this.leaderboard = leaderboard;
         try {
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -45,6 +46,8 @@ public class PlayerHandler implements Runnable {
             tickets.put(ticket, nickname);
             out.println("Your ticket: " + ticket);
             this.player = new Player(tickets.get(ticket),ticket, out);
+            leaderboard.put(this.player.getNickname(), this.player.getGamesWon());
+            showLeaderboard();
             out.println("Available commands: view, join, leave, select, newgame, exit | Usage /<Command>");
             String input;
             while ((input = in.readLine()) != null) {
@@ -114,11 +117,10 @@ public class PlayerHandler implements Runnable {
         gamesSemaphore.acquire();
         try {
             int gameId = games.size() + 1;
-            Game newGame = new Game(gameId);
+            Game newGame = new Game(gameId,this.leaderboard);
             games.add(newGame);
             
             out.println("New game created with ID " + gameId);
-            joinGame(gameId);
         } finally {
             gamesSemaphore.release();
         }
@@ -161,6 +163,13 @@ public class PlayerHandler implements Runnable {
         } finally {
             gamesSemaphore.release();
         }
+    }
+    private void showLeaderboard() {
+    	out.println("Leaderboard:");
+        leaderboard.entrySet().stream()
+        .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+        .limit(5)
+        .forEach(entry -> out.println(entry.getKey() + ": " + entry.getValue()));
     }
     private void leaveGame() throws InterruptedException {
         gamesSemaphore.acquire();

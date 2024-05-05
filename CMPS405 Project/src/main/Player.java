@@ -1,6 +1,7 @@
-package main3;
+package main;
 
 import java.io.PrintWriter;
+import java.util.Map;
 
 class Player {
     String nickname;
@@ -35,6 +36,9 @@ class Player {
 	}
 	public void setGamesWon(int gamesWon) {
 		this.gamesWon = gamesWon;
+	}
+	public void addGamesWon() {
+		this.gamesWon = this.gamesWon+1;
 	}
 	public void setNickname(String nickname) {
 		this.nickname = nickname;
