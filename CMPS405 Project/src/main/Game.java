@@ -150,14 +150,14 @@ public class Game {
                     notifyPlayers("Average of selections for round " + currentRound + ": " + avg);
                     for (Map.Entry<String, Integer> entry : selections.entrySet()) {
                     	int value = entry.getValue();
-                    		if((value-(avg*(2/3))) <= closestValue) {
-                    			closestValue = value-(avg*(2/3));
+                    		if(((float)Math.abs(value-(avg*(2/3)))) <= closestValue) {
+                    			closestValue = (float)Math.abs(value-(avg*(2/3)));
                     			
                     		}
                     	}
                     	 for (Map.Entry<String, Integer> entry : selections.entrySet()) {
                          	int value = entry.getValue();
-                         		if((value-(avg*(2/3))) == closestValue && !((int)Math.abs(players.size() - eliminated.size()) == MIN_PLAYERS_TO_START && value == 0)) {
+                         		if((float)Math.abs((value-(avg*(2/3)))) == closestValue && !((int)Math.abs(players.size() - eliminated.size()) == MIN_PLAYERS_TO_START && value == 0)) {
                          			for(Player pl : players) {
                                      	if(pl.getTicket().equals(entry.getKey())) {
                                      		playerNames = playerNames +","+pl.getNickname();

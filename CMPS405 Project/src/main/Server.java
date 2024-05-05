@@ -7,7 +7,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Server {
-    static final int PORT = 13336;
+    static final int PORT = 13337;
     static final int MAX_PLAYERS_PER_GAME = 6;
 
     private ServerSocket serverSocket;
@@ -24,7 +24,7 @@ public class Server {
             games = new ArrayList<>();
             tickets = new HashMap<>();
             leaderboard = new HashMap<>();
-            gamesSemaphore = new Semaphore(1); // Only one thread can access games list at a time
+            gamesSemaphore = new Semaphore(1);
             Game game = new Game(1,leaderboard);
             games.add(game);
         } catch (IOException e) {
