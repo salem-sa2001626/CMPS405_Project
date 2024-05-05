@@ -11,10 +11,11 @@ class Player {
     int gamesWon;
     public Player(String nickname, String ticket,PrintWriter out) {
         this.nickname = nickname;
-        this.points = 0; // Initial points
+        this.points = 0;
         this.out = out;
         this.ticket = ticket;
         this.voted = false;
+        this.gamesWon = 0;
     }
     public void sendMessage(String message) {
         out.println(message);

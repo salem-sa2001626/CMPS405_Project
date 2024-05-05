@@ -29,7 +29,7 @@ public class Game {
         this.currentRound = 0;
         this.selections = new HashMap<>();
         this.startVotes = 0;
-        this.gameSemaphore = new Semaphore(1); // Only one thread can access game data at a time
+        this.gameSemaphore = new Semaphore(1);
     }
 
     public boolean isActive() {
@@ -60,7 +60,6 @@ public class Game {
 		return players;
 	}
 	public void eliminatePlayer(Player player) {
-		this.players.remove(player);
 		this.eliminated.add(player);
 		player.sendMessage("You have been eliminated!");
 	}
@@ -94,18 +93,24 @@ public class Game {
         	}else {
         		notifyPlayers(player.getNickname()+" has joined the game!");
                 players.add(player);
-                player.setPoints(5);
+                player.setPoints(1);
                 if(players.size() >= MIN_PLAYERS_TO_START) {
                 	notifyPlayers("Please type /start to add your vote to start the game!");
                 }
         	}
-			/*
-			 * if (players.size() >= MIN_PLAYERS_TO_START) { startGame(); }
-			 */
         } finally {
             gameSemaphore.release();
         }
     }
+	
+	public boolean checkEliminated(Player player) {
+		for(Player pl : eliminated) {
+			if(pl.getTicket().equals(player.getTicket())) {
+				return true;
+			}
+		}
+		return false;
+	}
 
     public void startGame() {
         if (!active) {
@@ -119,19 +124,18 @@ public class Game {
             for (Player player : players) {
                 startMessage.append(player.getNickname()).append(", ");
             }
-            startMessage.deleteCharAt(startMessage.length() - 1); // Remove the last comma
-            startMessage.deleteCharAt(startMessage.length() - 1); // Remove the space after the last name
+            startMessage.deleteCharAt(startMessage.length() - 1);
+            startMessage.deleteCharAt(startMessage.length() - 1);
             notifyPlayers(startMessage.toString());
         }
     }
-
     public void addSelection(Player player, int selection) throws InterruptedException {
-        gameSemaphore.acquire(); // Acquire permit to access game data
+        gameSemaphore.acquire();
         try {
             String ticket = player.getTicket();
-            if (active && ticket != null && !selections.containsKey(ticket)) {
+            if (active && ticket != null && !selections.containsKey(ticket) && !checkEliminated(player)) {
                 selections.put(ticket, selection);
-                if (selections.size() == players.size()) {
+                if (selections.size() == (players.size() - eliminated.size())) {
                     int sum = 0;
                     for (int value : selections.values()) {
                         sum += value;
@@ -163,7 +167,7 @@ public class Game {
                                      	}
                          			}
                          		}else {
-                         			if(value == 0 && players.size() == 2) {
+                         			if(value == 0 && (players.size() - eliminated.size()) == 2) {
                          				if(players.get(0).getTicket() == entry.getKey()) {
                          					players.get(0).setPoints(players.get(0).getPoints()-1);
                                      		playerNames = ","+players.get(0).getNickname() +","+players.get(1).getNickname();
@@ -199,29 +203,28 @@ public class Game {
                    
        
                     notifyPlayers("game round "+this.currentRound+" "+playerNames.substring(1)+" "+values.substring(1)+" "+scores.substring(1)+" "+status.substring(1));
-/*                    for(Player pl : players) {
-                    	if(pl.getTicket().equals(closestPlayer)) {
-                    		notifyPlayers("The winner of the round is: "+pl.getNickname()+", Selected Value: "+selections.get(closestPlayer));
-                    	}
-                    	
-                    }*/
-                    if(players.size() < MIN_PLAYERS_TO_START) {
+                    if((players.size() - eliminated.size()) < MIN_PLAYERS_TO_START) {
                     	endGame();
-                    	notifyPlayers("The winner is: "+this.players.get(0));
-                    	for(Player pl : eliminated) {
-                    		this.players.add(pl);
+                    	Player winner = new Player(null,null,null);
+                    	for(Player pl : players) {
+                    		if(pl.getPoints() > 0) {
+                    			winner = pl;
+                    			break;
+                    		}
                     	}
+                    	winner.gamesWon = winner.gamesWon++;
+                    	notifyPlayers("The winner is: "+winner.getNickname());
                     	
                     }
-                    selections.clear(); // Clear selections for the next round
-                    currentRound++; // Move to the next round
+                    selections.clear();
+                    currentRound++;
                 }
  
             } else {
-                player.sendMessage("The game is not active or you have already submitted a selection.");
+                player.sendMessage("Invalid Selection, the game is not active or you have already submitted a selection or you have been eliminated.");
             }
         } finally {
-            gameSemaphore.release(); // Release permit after modifying game data
+            gameSemaphore.release();
         }
     }
 
@@ -252,18 +255,7 @@ public class Game {
 
     public void notifyPlayers(String message) {
         for (Player player : players) {
-//        	if(pl == null) {
-//        		player.sendMessage(message);
-//        		continue;
-//        	}
-//        	if(!player.getTicket().equals(pl.ticket)) {
-//            player.sendMessage(message);
-//        	}else {
-//        		
-//        	}
         	player.sendMessage(message);
         }
     }
-
-    // Other game-related methods
 }

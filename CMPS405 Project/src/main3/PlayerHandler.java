@@ -13,20 +13,16 @@ public class PlayerHandler implements Runnable {
     private Map<String, String> tickets;
     private List<Game> games;
     private Semaphore gamesSemaphore;
-    private Semaphore connectionsSemaphore;
-    private AtomicInteger connectionsCount;
     private String ticket;
     private Game game;
     private Player player;
 
     public PlayerHandler(Socket socket, Map<String, String> tickets, List<Game> games,
-                         Semaphore gamesSemaphore, Semaphore connectionsSemaphore, AtomicInteger connectionsCount) {
+                         Semaphore gamesSemaphore) {
         this.socket = socket;
         this.tickets = tickets;
         this.games = games;
         this.gamesSemaphore = gamesSemaphore;
-        this.connectionsSemaphore = connectionsSemaphore;
-        this.connectionsCount = connectionsCount;
         try {
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -38,11 +34,6 @@ public class PlayerHandler implements Runnable {
     @Override
     public void run() {
         try {
-            // Acquire permit to handle the connection
-            connectionsSemaphore.acquire();
-            connectionsCount.incrementAndGet();
-
-            // Initial interaction with the client
             out.println("Welcome to the game server! Enter your nickname:");
             String nickname = in.readLine();
             if (nickname == null || nickname.isEmpty()) {
@@ -50,16 +41,12 @@ public class PlayerHandler implements Runnable {
                 socket.close();
                 return;
             }
-
-            // Issue a ticket for the player
             ticket = UUID.randomUUID().toString();
             tickets.put(ticket, nickname);
             out.println("Your ticket: " + ticket);
             this.player = new Player(tickets.get(ticket),ticket, out);
             out.println("Available commands: view, join, leave, select, newgame, exit | Usage /<Command>");
-            // Handle player messages
             String input;
-
             while ((input = in.readLine()) != null) {
                 String[] tokens = input.split(" ");
                 String command = tokens[0];
@@ -101,7 +88,7 @@ public class PlayerHandler implements Runnable {
                         createNewGame();
                         break;
                     case "/exit":
-                        return; // Exit the loop and close the connection
+                        return;
                     default:
                     	if(this.game == null || command.charAt(0) == '/') {
                             out.println("Available commands: view, join, leave, select, newgame, exit | Usage /<Command>");
@@ -114,9 +101,7 @@ public class PlayerHandler implements Runnable {
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         } finally {
-            // Release permit after handling the connection
-            connectionsSemaphore.release();
-            connectionsCount.decrementAndGet();
+
             try {
                 socket.close();
             } catch (IOException e) {
@@ -126,7 +111,6 @@ public class PlayerHandler implements Runnable {
     }
 
     private void createNewGame() throws InterruptedException {
-        // Acquire permit to access games list
         gamesSemaphore.acquire();
         try {
             int gameId = games.size() + 1;
@@ -134,36 +118,31 @@ public class PlayerHandler implements Runnable {
             games.add(newGame);
             
             out.println("New game created with ID " + gameId);
+            joinGame(gameId);
         } finally {
-            // Release permit after accessing games list
             gamesSemaphore.release();
         }
     }
 
     private void joinGame(int gameId) throws InterruptedException {
-        // Acquire permit to access games list
         gamesSemaphore.acquire();
         try {
-            // Find the game with the specified ID
             for (Game game : games) {
                 if (game.getGameId() == gameId) {
                 	if(game.isActive()) {
                 		this.player.sendMessage("Unable to join game, game is currently active.");
                 		return;
                 	}else {
-                        // Add player to the game
                         game.addPlayer(this.player);
-                        this.game = game; // Set the current game for the player
+                        this.game = game;
                         out.println("Joined game " + gameId);
                         return;
                 	}
 
                 }
             }
-            // Game not found
             out.println("Game not found.");
         } finally {
-            // Release permit after accessing games list
             gamesSemaphore.release();
         }
     }
@@ -180,26 +159,20 @@ public class PlayerHandler implements Runnable {
         	}
 
         } finally {
-            // Release permit after accessing games list
             gamesSemaphore.release();
         }
     }
     private void leaveGame() throws InterruptedException {
-        // Acquire permit to access games list
         gamesSemaphore.acquire();
         try {
-            // Find the game with the specified ID
             this.game.removePlayer(this.ticket);
             this.game = null;
-            // Game not found
             out.println("You have left the game.");
         } finally {
-            // Release permit after accessing games list
             gamesSemaphore.release();
         }
     }
     private void selectNumber(int number) throws InterruptedException {
-        // Find the game that the player is currently in
         if (game == null) {
             out.println("You are not in a game.");
             return;
@@ -208,22 +181,16 @@ public class PlayerHandler implements Runnable {
             out.println("Please only choose a number between (0 - 100)");
             return;
         }
-
-        // Acquire permit to access game data
         gamesSemaphore.acquire();
         try {
-            // Check if the game is active
             if (!game.isActive()) {
                 out.println("Game is not active.");
                 return;
             }
-
-            // Add the player's selection to the game
             out.println("Number " + number + " selected for round " + game.getCurrentRound());
             game.addSelection(player, number);
 
         } finally {
-            // Release permit after accessing game data
             gamesSemaphore.release();
         }
     }
