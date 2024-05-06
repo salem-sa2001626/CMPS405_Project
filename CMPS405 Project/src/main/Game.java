@@ -94,7 +94,7 @@ public class Game {
         	}else {
         		notifyPlayers(player.getNickname()+" has joined the game!");
                 players.add(player);
-                player.setPoints(1);
+                player.setPoints(5);
                 if(players.size() >= MIN_PLAYERS_TO_START) {
                 	notifyPlayers("Please type /start to add your vote to start the game!");
                 }
@@ -142,6 +142,7 @@ public class Game {
                         sum += value;
                     }
                     float avg = (float) sum / selections.size();
+                    avg = (float)(0.667) * avg;
                     String playerNames = "";
                     String values = "";
                     String status = "";
@@ -150,14 +151,13 @@ public class Game {
                     notifyPlayers("Average of selections for round " + currentRound + ": " + avg);
                     for (Map.Entry<String, Integer> entry : selections.entrySet()) {
                     	int value = entry.getValue();
-                    		if(((float)Math.abs(value-(avg*(2/3)))) <= closestValue) {
-                    			closestValue = (float)Math.abs(value-(avg*(2/3)));
-                    			
+                    		if(Math.abs((float)value-avg) <= closestValue) {
+                    			closestValue = (float)Math.abs((float)value-avg);
                     		}
                     	}
                     	 for (Map.Entry<String, Integer> entry : selections.entrySet()) {
                          	int value = entry.getValue();
-                         		if((float)Math.abs((value-(avg*(2/3)))) == closestValue && !((int)Math.abs(players.size() - eliminated.size()) == MIN_PLAYERS_TO_START && value == 0)) {
+                         		if((float)Math.abs((float)value-avg) == closestValue && !((int)Math.abs(players.size() - eliminated.size()) == MIN_PLAYERS_TO_START && value == 0)) {
                          			for(Player pl : players) {
                                      	if(pl.getTicket().equals(entry.getKey())) {
                                      		playerNames = playerNames +","+pl.getNickname();
@@ -255,6 +255,10 @@ public class Game {
         currentRound = 0;
         startVotes = 0;
         selections.clear();
+        eliminated.clear();
+        for(Player pl : players) {
+        	pl.setPoints(5);
+        }
         notifyPlayers("The game has ended.");
         
     }
